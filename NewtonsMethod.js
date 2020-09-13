@@ -2,7 +2,7 @@
     Newton's Method project
     Copyright 2020 Mount Si Software, LLC
 */
-class complexNumber {
+class ComplexNumber {
     constructor(r, i) {
         this.r = r;
         this.i = i;
@@ -17,27 +17,28 @@ class complexNumber {
         return diffR * diffR + diffI * diffI;
     }
     add(other) {
-        return new complexNumber(this.r + other.r, this.i + other.i);
+        return new ComplexNumber(this.r + other.r, this.i + other.i);
     }
     subtract(other) {
-        return new complexNumber(this.r - other.r, this.i - other.i);
+        return new ComplexNumber(this.r - other.r, this.i - other.i);
     }
     multiply(other) {
-        return new complexNumber(this.r * other.r + this.i * other.i * -1, this.r * other.i + this.i * other.r);
+        return new ComplexNumber(this.r * other.r + this.i * other.i * -1, this.r * other.i + this.i * other.r);
     }
     divide(other) {
-        return new complexNumber((this.r * other.r + this.i * other.i) / (other.r * other.r + other.i * other.i), (this.i * other.r - this.r * other.i) / (other.r * other.r + other.i * other.i));
+        return new ComplexNumber((this.r * other.r + this.i * other.i) / (other.r * other.r + other.i * other.i), (this.i * other.r - this.r * other.i) / (other.r * other.r + other.i * other.i));
     }
     toString() {
         return "(" + this.r + ", " + this.i + ")";
     }
 }
-class equation {
+class Equation {
     constructor() {
         this.HTMLString = "";
     }
+    get HTML() { return this.HTMLString; }
 }
-class polynomial extends equation {
+class Polynomial extends Equation {
     // coefficients is an array of numbers used as coefficients for
     // the respective power elements of a polynomial equation.
     // coefficients are ordered in the reverse of how they would be written.
@@ -45,6 +46,7 @@ class polynomial extends equation {
     // for 8x^2 + 3x - 12, the array would have values [-12, 3, 8];
     constructor(coefficients) {
         super();
+        this.numRoots = 0;
         // save off coefficients
         this.equationCoefs = coefficients;
         // make the derivative coefficients
@@ -57,8 +59,10 @@ class polynomial extends equation {
         // make the HTML string
         for (nLoop = coefficients.length - 1; nLoop >= 0; nLoop--) {
             let coef = coefficients[nLoop];
-            if (this.HTMLString.length == 0)
-                this.HTMLString = String(coef) + this.formatExponent(nLoop);
+            if (this.HTMLString.length == 0) {
+                let strCoef = coef == 1 ? "" : coef == -1 ? "-" : String(coef);
+                this.HTMLString = strCoef + this.formatExponent(nLoop);
+            }
             else if (coef > 0)
                 this.HTMLString += " + " + String(coef) + this.formatExponent(nLoop);
             else if (coef < 0)
@@ -75,17 +79,32 @@ class polynomial extends equation {
     equationValue(point) { return this.formulaValue(this.equationCoefs, point); }
     derivativeValue(point) { return this.formulaValue(this.derivativeCoefs, point); }
     formulaValue(formula, point) {
-        let value = new complexNumber(formula[0], 0);
-        let pointRaised = new complexNumber(1, 0);
+        let value = new ComplexNumber(formula[0], 0);
+        let pointRaised = new ComplexNumber(1, 0);
         let nLoop;
         for (nLoop = 1; nLoop < formula.length; nLoop++) {
             pointRaised = pointRaised.multiply(point);
-            value = value.add(pointRaised.multiply(new complexNumber(formula[nLoop], 0)));
+            value = value.add(pointRaised.multiply(new ComplexNumber(formula[nLoop], 0)));
         }
         return value;
     }
+    get roots() {
+        // make a horrible, terrible, absolutely awful assumption
+        // that all polynomial equations we'll actually process are of the form
+        // x^y - c = 0
+        let roots = [];
+        let nLoop, angle, exponent = this.equationCoefs.length - 1;
+        let constant = Math.abs(this.equationCoefs[0]);
+        for (nLoop = 0; nLoop < exponent; nLoop++) {
+            angle = 2 * Math.PI * nLoop / exponent;
+            roots.push(new ComplexNumber(constant * Math.cos(angle), constant * Math.sin(angle)));
+        }
+        this.numRoots = roots.length;
+        return roots;
+    }
+    get rootCount() { return this.numRoots; }
 }
-class newtonsMethodResult {
+class NewtonsMethodResult {
     constructor(finalPoint, attempts, rootIndex) {
         this.finalPoint = finalPoint;
         this.attempts = attempts;
@@ -93,20 +112,14 @@ class newtonsMethodResult {
     }
     toString() { return "(" + this.finalPoint.toString() + ", " + this.attempts + ", " + this.rootIndex + ")"; }
 }
-class newtonsMethod {
-    constructor(exponent, maxAttempts, coefficient = new complexNumber(1, 0)) {
-        this.exponent = exponent;
+class NewtonsMethod {
+    constructor(equation, maxAttempts, coefficient = new ComplexNumber(1, 0)) {
+        this.equation = equation;
         this.maxAttempts = maxAttempts;
         this.coefficient = coefficient;
         this.roots = [];
         this.tolerance = 0.00001;
-        this.constOne = new complexNumber(1, 0);
-        let nLoop, angle;
-        for (nLoop = 0; nLoop < this.exponent; nLoop++) {
-            angle = 2 * Math.PI * nLoop / this.exponent;
-            this.roots.push(new complexNumber(Math.cos(angle), Math.sin(angle)));
-        }
-        this.constExponent = new complexNumber(this.exponent, 0);
+        this.roots = equation.roots;
     }
     solve(point) {
         let nextPoint = this.evaluate(point);
@@ -128,22 +141,15 @@ class newtonsMethod {
                 }
             }
         }
-        return new newtonsMethodResult(nextPoint, iterations, rootIndex);
+        return new NewtonsMethodResult(nextPoint, iterations, rootIndex);
     }
     evaluate(point) {
-        let nLoop;
-        let xN = point;
-        let xNMinusOne;
-        for (nLoop = 2; nLoop <= this.exponent; nLoop++) {
-            xNMinusOne = xN;
-            xN = xN.multiply(point);
-        }
-        let numerator = xN.subtract(this.constOne);
-        let denomonator = xNMinusOne.multiply(this.constExponent);
-        return point.subtract(this.coefficient.multiply(numerator.divide(denomonator)));
+        let numerator = this.equation.equationValue(point);
+        let denomonator = this.equation.derivativeValue(point);
+        return point.subtract(numerator.divide(denomonator));
     }
 }
-class imageInfo {
+class ImageInfo {
     constructor(data, text) {
         this.data = data;
         this.text = text;
@@ -153,8 +159,8 @@ let height, width, ctx;
 let startingPoints = [], results = [];
 let gradients = [4, 8, 16, 32, 64];
 let exponents = [3, 4, 5, 6];
+let equations = [];
 let colors = [];
-let algorithms = [];
 let images = [];
 let nImageShown;
 let statusSummary, statusDetails;
@@ -189,17 +195,23 @@ function drawFractals() {
     let xPos;
     for (xPos = 0; xPos < width; xPos++) {
         let xCoordinate = xStart + ((xPos / width) * xSize);
-        let point = new complexNumber(xCoordinate, yStart);
+        let point = new ComplexNumber(xCoordinate, yStart);
         startingPoints.push(point);
     }
     let yPos;
     for (yPos = 1; yPos < height; yPos++) {
         let yCoordinate = yStart - ((yPos / height) * ySize);
         for (xPos = 0; xPos < width; xPos++) {
-            let point = new complexNumber(startingPoints[xPos].real, yCoordinate);
+            let point = new ComplexNumber(startingPoints[xPos].real, yCoordinate);
             startingPoints.push(point);
         }
     }
+    console.log("... completed");
+    console.log("Creating equations ...");
+    equations.push(new Polynomial([-1, 0, 0, 1]));
+    equations.push(new Polynomial([-1, 0, 0, 0, 1]));
+    equations.push(new Polynomial([-1, 0, 0, 0, 0, 1]));
+    equations.push(new Polynomial([-1, 0, 0, 0, 0, 0, 1]));
     console.log("... completed");
     colors.length = 0;
     colors.push(new Array(255, 0, 0));
@@ -208,25 +220,24 @@ function drawFractals() {
     colors.push(new Array(255, 255, 0));
     colors.push(new Array(127, 0, 127));
     colors.push(new Array(255, 127, 0));
-    algorithms.length = 0;
     images.length = 0;
     ctx = canvas.getContext("2d");
     drawFractalRoots(0);
 }
-function drawFractalRoots(exponentIndex) {
-    if (exponentIndex < exponents.length) {
+function drawFractalRoots(equationIndex) {
+    if (equationIndex < equations.length) {
+        let equation = equations[equationIndex];
         let maxAttempts = gradients[gradients.length - 1];
-        let algo = new newtonsMethod(exponents[exponentIndex], maxAttempts, new complexNumber(1, 0));
-        algorithms.push(algo);
+        let algo = new NewtonsMethod(equation, maxAttempts, new ComplexNumber(1, 0));
         results.length = 0;
         let index;
-        statusSummary.innerHTML = "Solving x<sup>" + exponents[exponentIndex] + "</sup> - 1 for " + startingPoints.length + " points";
-        console.log("Computing final points for " + exponents[exponentIndex] + " roots with " + maxAttempts + " gradients ...");
+        statusSummary.innerHTML = "Solving " + equation.HTML + " for " + startingPoints.length + " points";
+        console.log("Computing final points for " + equation.rootCount + " roots with " + maxAttempts + " gradients ...");
         for (index = 0; index < startingPoints.length; index++)
             results.push(algo.solve(startingPoints[index]));
         console.log("... completed");
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        drawFractalRootsGradients(exponentIndex, 0);
+        drawFractalRootsGradients(equationIndex, 0);
     }
     else {
         let elem = document.getElementById("prev");
@@ -244,17 +255,17 @@ function drawFractalRoots(exponentIndex) {
         });
     }
 }
-function drawFractalRootsGradients(exponentIndex, gradientIndex) {
+function drawFractalRootsGradients(equationIndex, gradientIndex) {
     if (gradientIndex < gradients.length) {
-        statusSummary.innerHTML = "Drawing roots for x<sup>" + exponents[exponentIndex] + "</sup> - 1 reached within " + gradients[gradientIndex] + " attempts";
+        statusSummary.innerHTML = "Drawing roots for " + equations[equationIndex].HTML + " reached within " + gradients[gradientIndex] + " attempts";
         let yPos, xPos;
         for (yPos = 0; yPos < height; yPos++)
             setTimeout(drawFractalLine, 0, yPos, gradients[gradientIndex]);
         setTimeout(storeFractalImage, 0);
-        setTimeout(drawFractalRootsGradients, 0, exponentIndex, gradientIndex + 1);
+        setTimeout(drawFractalRootsGradients, 0, equationIndex, gradientIndex + 1);
     }
     else
-        setTimeout(drawFractalRoots, 0, exponentIndex + 1);
+        setTimeout(drawFractalRoots, 0, equationIndex + 1);
 }
 function drawFractalLine(yPos, nGradients) {
     let xPos, index = width * yPos;
@@ -271,7 +282,7 @@ function drawFractalLine(yPos, nGradients) {
     }
 }
 function storeFractalImage() {
-    images.push(new imageInfo(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height), statusSummary.innerHTML));
+    images.push(new ImageInfo(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height), statusSummary.innerHTML));
 }
 function previousImage() {
     nImageShown--;
