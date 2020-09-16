@@ -11,6 +11,7 @@ export class ComplexNumber {
     }
     get real() { return this.r; }
     get imaginary() { return this.i; }
+    get toString() { return "(" + this.r + ", " + this.i + ")"; }
     distance(other) {
         let diffR = this.r - other.r;
         let diffI = this.i - other.i;
@@ -29,9 +30,6 @@ export class ComplexNumber {
     }
     divide(other) {
         return new ComplexNumber((this.r * other.r + this.i * other.i) / (other.r * other.r + other.i * other.i), (this.i * other.r - this.r * other.i) / (other.r * other.r + other.i * other.i));
-    }
-    toString() {
-        return "(" + this.r + ", " + this.i + ")";
     }
 }
 export class Equation {
@@ -59,17 +57,22 @@ export class Polynomial extends Equation {
         for (nLoop = 0; nLoop < this.derivativeCoefs.length; nLoop++)
             this.derivativeCoefs[nLoop] = this.equationCoefs[nLoop + 1] * (nLoop + 1);
         // make the HTML string
-        for (nLoop = coefficients.length - 1; nLoop >= 0; nLoop--) {
+        for (nLoop = coefficients.length - 1; nLoop >= 1; nLoop--) {
             let coef = coefficients[nLoop];
-            if (this.HTMLString.length == 0) {
-                let strCoef = coef == 1 ? "" : coef == -1 ? "-" : String(coef);
-                this.HTMLString = strCoef + this.formatExponent(nLoop);
+            if (coef != 0) {
+                let strCoef = Math.abs(coef) == 1 ? "" : String(Math.abs(coef));
+                if (this.HTMLString.length == 0)
+                    this.HTMLString = (coef < 0 ? "-" : "") + strCoef + this.formatExponent(nLoop);
+                else
+                    this.HTMLString += (coef > 0 ? " + " : " - ") + strCoef + this.formatExponent(nLoop);
             }
-            else if (coef > 0)
-                this.HTMLString += " + " + String(coef) + this.formatExponent(nLoop);
-            else if (coef < 0)
-                this.HTMLString += " - " + String(0 - coef) + this.formatExponent(nLoop);
         }
+        let constant = coefficients[0];
+        if (this.HTMLString.length == 0)
+            this.HTMLString = String(constant);
+        else
+            this.HTMLString += constant > 0 ? " + " + String(constant) : constant < 0 ? " - " + String(0 - constant) : "";
+        this.HTMLString = "<i>" + this.HTMLString + "</i>";
     }
     formatExponent(expValue) {
         if (expValue == 0)
@@ -102,6 +105,7 @@ export class SimplePolynomial extends Polynomial {
         super(coefficients);
     }
     get roots() {
+        return new Array();
         // all simple polynomial equations are of the form
         // x^y - c = 0
         let roots = [];

@@ -2,63 +2,21 @@
     Newton's Method project
     Copyright 2020 Mount Si Software, LLC
 */
-import { ComplexNumber, SimplePolynomial } from "./NewtonsMethodClasses.js";
-class NewtonsMethodResult {
-    constructor(finalPoint, attempts, rootIndex) {
-        this.finalPoint = finalPoint;
-        this.attempts = attempts;
-        this.rootIndex = rootIndex;
-    }
-    toString() { return "(" + this.finalPoint.toString() + ", " + this.attempts + ", " + this.rootIndex + ")"; }
-}
-class NewtonsMethod {
-    constructor(equation, maxAttempts, coefficient = new ComplexNumber(1, 0)) {
-        this.equation = equation;
-        this.maxAttempts = maxAttempts;
-        this.coefficient = coefficient;
-        this.roots = [];
-        this.tolerance = 0.00001;
-        this.roots = equation.roots;
-    }
-    get rootCount() { return this.roots.length; }
-    solve(point) {
-        let nextPoint = this.evaluate(point);
-        let iterations = 1;
-        while (nextPoint.distance(point) > this.tolerance && iterations < this.maxAttempts) {
-            point = nextPoint;
-            nextPoint = this.evaluate(point);
-            iterations++;
-        }
-        let rootIndex = -1;
-        if (nextPoint.distance(point) <= this.tolerance) {
-            let distance = Number.MAX_SAFE_INTEGER;
-            let nLoop, newDistance;
-            for (nLoop = 0; nLoop < this.roots.length; nLoop++) {
-                newDistance = this.roots[nLoop].distance(nextPoint);
-                if (newDistance < distance) {
-                    distance = newDistance;
-                    rootIndex = nLoop;
-                }
-            }
-        }
-        return new NewtonsMethodResult(nextPoint, iterations, rootIndex);
-    }
-    evaluate(point) {
-        let numerator = this.equation.equationValue(point);
-        let denomonator = this.equation.derivativeValue(point);
-        return point.subtract(numerator.divide(denomonator));
-    }
-}
+import { ComplexNumber, Polynomial } from "./NewtonsMethodClasses.js";
+import { NewtonsMethod } from "./NewtonsMethodAlgorithm.js";
 class ImageInfo {
     constructor(data, text) {
         this.data = data;
         this.text = text;
     }
 }
-let height, width, ctx;
+let height, width;
+let xSize, ySize;
+let ctx;
 let startingPoints = [], results = [];
 let gradients = [4, 8, 16, 32, 64];
 let equations = [];
+let algo;
 let colors = [];
 let images = [];
 let nImageShown;
@@ -84,8 +42,8 @@ function drawFractals() {
     let body = document.getElementById("myBody");
     width = canvas.width = body.offsetWidth;
     height = canvas.height = body.offsetHeight;
-    let ySize = 3;
-    let xSize = width * 3 / height;
+    ySize = 3;
+    xSize = width * 3 / height;
     if (xSize < 3) {
         xSize = 3;
         ySize = height * 3 / width;
@@ -110,10 +68,14 @@ function drawFractals() {
     }
     console.log("... completed");
     console.log("Creating equations ...");
-    equations.push(new SimplePolynomial(3));
+    /* equations.push(new SimplePolynomial(3));
     equations.push(new SimplePolynomial(4));
     equations.push(new SimplePolynomial(5));
-    equations.push(new SimplePolynomial(6));
+    equations.push(new SimplePolynomial(6)); */
+    equations.push(new Polynomial([2, -2, 0, 1]));
+    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
+    equations.push(new Polynomial([-1, 0, 0, 1, 0, 0, 1]));
+    equations.push(new Polynomial([-1, 0, 0, 1]));
     console.log("... completed");
     colors.length = 0;
     colors.push(new Array(255, 0, 0));
@@ -122,24 +84,22 @@ function drawFractals() {
     colors.push(new Array(255, 255, 0));
     colors.push(new Array(127, 0, 127));
     colors.push(new Array(255, 127, 0));
+    colors.push(new Array(191, 191, 191));
+    colors.push(new Array(63, 63, 63));
     images.length = 0;
-    ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d", { alpha: false });
     drawFractalRoots(0);
 }
 function drawFractalRoots(equationIndex) {
     if (equationIndex < equations.length) {
         let equation = equations[equationIndex];
         let maxAttempts = gradients[gradients.length - 1];
-        let algo = new NewtonsMethod(equation, maxAttempts, new ComplexNumber(1, 0));
+        algo = new NewtonsMethod(equation, maxAttempts);
         results.length = 0;
-        let index;
         statusSummary.innerHTML = "Solving " + equation.HTML + " for " + startingPoints.length + " points";
         console.log("Computing final points for " + algo.rootCount + " roots with " + maxAttempts + " gradients ...");
-        for (index = 0; index < startingPoints.length; index++)
-            results.push(algo.solve(startingPoints[index]));
-        console.log("... completed");
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        drawFractalRootsGradients(equationIndex, 0);
+        drawRootWells();
+        setTimeout(drawFractalRootsGradients, 0, equationIndex, 0);
     }
     else {
         let elem = document.getElementById("prev");
@@ -150,17 +110,45 @@ function drawFractalRoots(equationIndex) {
         elem.onclick = nextImage;
         nImageShown = images.length - 1;
         document.addEventListener("keydown", function (event) {
-            if (event.keyCode == 37)
+            if (event.code == "ArrowLeft")
                 previousImage();
-            else if (event.keyCode == 39)
+            else if (event.code == "ArrowRight")
                 nextImage();
+            event.preventDefault();
         });
     }
 }
+function drawRootWells() {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    let yPos;
+    for (yPos = 0; yPos < height; yPos++)
+        setTimeout(updateRootWells, 0, yPos * width, width);
+}
+function updateRootWells(firstPoint, points) {
+    for (let index = firstPoint; index < (firstPoint + points); index++)
+        results.push(algo.solve(startingPoints[index]));
+    let wells = algo.wellsInfo;
+    for (let nLoop = 0; nLoop < wells.length; nLoop++) {
+        let well = wells[nLoop];
+        let x = realToPixels(well.centerPoint.real);
+        let y = imaginaryToPixels(well.centerPoint.imaginary);
+        let r = Math.ceil(Math.sqrt(well.size / Math.PI));
+        let gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
+        gradient.addColorStop(0, "rgb(" + colors[nLoop][0] + ", " + colors[nLoop][1] + ", " + colors[nLoop][2] + ")");
+        gradient.addColorStop(0.5, "rgba(" + colors[nLoop][0] + ", " + colors[nLoop][1] + ", " + colors[nLoop][2] + ", 0.8)");
+        gradient.addColorStop(1, "transparent");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+}
+function realToPixels(coordinate) { return Math.floor(width * (coordinate + (xSize / 2)) / xSize); }
+function imaginaryToPixels(coordinate) { return Math.floor(height * ((ySize / 2) - coordinate) / ySize); }
 function drawFractalRootsGradients(equationIndex, gradientIndex) {
     if (gradientIndex < gradients.length) {
         statusSummary.innerHTML = "Drawing roots for " + equations[equationIndex].HTML + " reached within " + gradients[gradientIndex] + " attempts";
-        let yPos, xPos;
+        let yPos;
         for (yPos = 0; yPos < height; yPos++)
             setTimeout(drawFractalLine, 0, yPos, gradients[gradientIndex]);
         setTimeout(storeFractalImage, 0);
@@ -175,7 +163,7 @@ function drawFractalLine(yPos, nGradients) {
         let pixelColor;
         let rootIndex = results[index].rootIndex;
         let attempts = results[index].attempts;
-        if (attempts > nGradients || rootIndex == -1)
+        if (attempts > nGradients || rootIndex == -1 || results[index].rootWithinTolerance == false)
             pixelColor = "black";
         else
             pixelColor = "rgba(" + colors[rootIndex][0] + ", " + colors[rootIndex][1] + ", " + colors[rootIndex][2] + ", " + (1 - (attempts - 1) / nGradients) + ")";

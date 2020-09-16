@@ -8,10 +8,12 @@
 export class ComplexNumber
 {
     constructor(private r: number, private i: number) {}
+
     public get real(): number { return this.r; }
-    public get imaginary(): number { return this.i; }
+    public get imaginary(): number { return this.i; }    
+    public get toString() : string { return "(" + this.r + ", " + this.i + ")"; }
     
-    distance(other: ComplexNumber) : number
+    public distance(other: ComplexNumber) : number
     {
         let diffR: number = this.r - other.r;
         let diffI: number = this.i - other.i;
@@ -20,31 +22,26 @@ export class ComplexNumber
         return diffR * diffR + diffI * diffI;
     }
     
-    add(other: ComplexNumber) : ComplexNumber
+    public add(other: ComplexNumber) : ComplexNumber
     {
         return new ComplexNumber(this.r + other.r, this.i + other.i);
     }
     
-    subtract(other: ComplexNumber) : ComplexNumber
+    public subtract(other: ComplexNumber) : ComplexNumber
     {
         return new ComplexNumber(this.r - other.r, this.i - other.i);
     }
     
-    multiply(other: ComplexNumber) : ComplexNumber
+    public multiply(other: ComplexNumber) : ComplexNumber
     {
         return new ComplexNumber(this.r * other.r + this.i * other.i * -1,
             this.r * other.i + this.i * other.r);
     }
     
-    divide(other: ComplexNumber) : ComplexNumber
+    public divide(other: ComplexNumber) : ComplexNumber
     {
         return new ComplexNumber((this.r * other.r + this.i * other.i) / (other.r * other.r + other.i * other.i),
             (this.i * other.r - this.r * other.i) / (other.r * other.r + other.i * other.i));
-    }
-    
-    toString() : string
-    {
-        return "(" + this.r + ", " + this.i + ")";
     }
 }
 
@@ -85,19 +82,20 @@ export class Polynomial extends Equation
             this.derivativeCoefs[nLoop] = this.equationCoefs[nLoop + 1] * (nLoop + 1);
 
         // make the HTML string
-        for (nLoop = coefficients.length - 1; nLoop >= 0; nLoop--)
+        for (nLoop = coefficients.length - 1; nLoop >= 1; nLoop--)
         {
             let coef: number = coefficients[nLoop];
-            if (this.HTMLString.length == 0)
+            if (coef != 0)
             {
-                let strCoef: string = coef == 1 ? "" : coef == -1 ? "-" : String(coef);
-                this.HTMLString = strCoef + this.formatExponent(nLoop);
+                let strCoef: string = Math.abs(coef) == 1 ? "" : String(Math.abs(coef));
+                if (this.HTMLString.length == 0) this.HTMLString = (coef < 0 ? "-" : "") + strCoef + this.formatExponent(nLoop);
+                else this.HTMLString += (coef > 0 ? " + " : " - ") + strCoef + this.formatExponent(nLoop);
             }
-            else if (coef > 0)
-                this.HTMLString += " + " + String(coef) + this.formatExponent(nLoop);
-            else if (coef < 0)
-                this.HTMLString += " - " + String(0 - coef) + this.formatExponent(nLoop);
         }
+        let constant = coefficients[0];
+        if (this.HTMLString.length == 0) this.HTMLString = String(constant);
+        else this.HTMLString += constant > 0 ? " + " + String(constant) : constant < 0 ? " - " + String(0 - constant) : "";
+        this.HTMLString = "<i>" + this.HTMLString + "</i>"
     }
 
     formatExponent(expValue: number) : string
@@ -136,6 +134,7 @@ export class SimplePolynomial extends Polynomial
 
     get roots() : ComplexNumber[]
     {
+        return new Array();
         // all simple polynomial equations are of the form
         // x^y - c = 0
         let roots: ComplexNumber[] = [];
