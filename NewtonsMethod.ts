@@ -14,6 +14,7 @@ class ImageInfo
 let height: number, width: number;
 let xSize: number, ySize: number;
 let ctx: CanvasRenderingContext2D;
+let telemetryStyle: CSSStyleDeclaration;
 let startingPoints: ComplexNumber[] = [], results: NewtonsMethodResult[] = [];
 let gradients: number[] = [4, 8, 16, 32, 64];
 let equations: Equation[] = [];
@@ -45,6 +46,7 @@ function drawFractals() : void
 {
     setHandlers(false);
     statusSummary = <HTMLDivElement> document.getElementById("statusSummary");
+    telemetryStyle = window.getComputedStyle(statusSummary);
     statusSummary.innerText = "Calculating coordinates";
     let canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById("myCanvas");
     let body: HTMLBodyElement = <HTMLBodyElement> document.getElementById("myBody");
@@ -82,14 +84,13 @@ function drawFractals() : void
     console.log("... completed");
 
     console.log("Creating equations ...");
-    /* equations.push(new SimplePolynomial(3));
-    equations.push(new SimplePolynomial(4));
+    equations.push(new SimplePolynomial(3));
+    /* equations.push(new SimplePolynomial(4));
     equations.push(new SimplePolynomial(5));
     equations.push(new SimplePolynomial(6)); */
     equations.push(new Polynomial([2, -2, 0, 1]));
-    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
     equations.push(new Polynomial([-1, 0, 0, 1, 0, 0, 1]));
-    equations.push(new Polynomial([-1, 0, 0, 1]));
+    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
     console.log("... completed");
 
     colors.length = 0;
@@ -143,6 +144,8 @@ function drawFractalRoots(equationIndex: number) : void
 function drawRootWells()
 {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
     let yPos: number;
     for (yPos = 0; yPos < height; yPos++) setTimeout(updateRootWells, 0, yPos * width, width);
 }
@@ -155,8 +158,9 @@ function updateRootWells(firstPoint, points)
     for (let nLoop: number = 0; nLoop < wells.length; nLoop++)
     {
         let well: RootWell = wells[nLoop];
-        let x: number = realToPixels(well.centerPoint.real);
-        let y: number = imaginaryToPixels(well.centerPoint.imaginary);
+        let center: ComplexNumber = well.centerPoint;
+        let x: number = realToPixels(center.real);
+        let y: number = imaginaryToPixels(center.imaginary);
         let r: number = Math.ceil(Math.sqrt(well.size / Math.PI));
         let gradient: CanvasGradient = ctx.createRadialGradient(x, y, 0, x, y, r);
         gradient.addColorStop(0, "rgb(" + colors[nLoop][0] + ", " + colors[nLoop][1] + ", " + colors[nLoop][2] + ")");
@@ -166,6 +170,13 @@ function updateRootWells(firstPoint, points)
         ctx.beginPath();
         ctx.arc(x, y, r, 0, 2 * Math.PI);
         ctx.fill();
+
+        let fontSize: number = Math.max(10, Math.floor(r / 2.1));
+        ctx.font = String(fontSize) + "px " + telemetryStyle.fontFamily;
+        let strPoints: string = String(well.size) + " points";
+        ctx.fillStyle = "black";
+        ctx.fillText(center.toPlusMinus(2), x, y - Math.ceil(r / 2), Math.floor(1.5 * r));
+        ctx.fillText(strPoints, x, y + Math.ceil(r / 20), Math.floor(1.5 * r));
     }
 }
 
@@ -177,6 +188,7 @@ function drawFractalRootsGradients(equationIndex: number, gradientIndex: number)
     if (gradientIndex < gradients.length)
     {
         statusSummary.innerHTML = "Drawing roots for " + equations[equationIndex].HTML + " reached within " + gradients[gradientIndex] + " attempts";
+        if (gradientIndex == 0) ctx.clearRect(0, 0, width, height);
         let yPos: number;
         for (yPos = 0; yPos < height; yPos++) setTimeout(drawFractalLine, 0, yPos, gradients[gradientIndex]);
         setTimeout(storeFractalImage, 0);

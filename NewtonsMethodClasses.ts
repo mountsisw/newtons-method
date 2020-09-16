@@ -11,7 +11,14 @@ export class ComplexNumber
 
     public get real(): number { return this.r; }
     public get imaginary(): number { return this.i; }    
-    public get toString() : string { return "(" + this.r + ", " + this.i + ")"; }
+    public get toString(): string { return "(" + this.r + ", " + this.i + ")"; }
+    public toPlusMinus(decimalDigits: number = -1)
+    {
+        let realPart: string = decimalDigits == -1 ? this.r.toString() : this.r.toFixed(decimalDigits);
+        let signPart: string = this.i < 0 ? " - " : " + ";
+        let imaginaryPart: string = decimalDigits == -1 ? Math.abs(this.i).toString() : Math.abs(this.i).toFixed(decimalDigits);
+        return realPart + signPart + imaginaryPart + "i";
+    }
     
     public distance(other: ComplexNumber) : number
     {

@@ -2,7 +2,7 @@
     Newton's Method project
     Copyright 2020 Mount Si Software, LLC
 */
-import { ComplexNumber, Polynomial } from "./NewtonsMethodClasses.js";
+import { ComplexNumber, Polynomial, SimplePolynomial } from "./NewtonsMethodClasses.js";
 import { NewtonsMethod } from "./NewtonsMethodAlgorithm.js";
 class ImageInfo {
     constructor(data, text) {
@@ -13,6 +13,7 @@ class ImageInfo {
 let height, width;
 let xSize, ySize;
 let ctx;
+let telemetryStyle;
 let startingPoints = [], results = [];
 let gradients = [4, 8, 16, 32, 64];
 let equations = [];
@@ -37,6 +38,7 @@ function setHandlers(flag) {
 function drawFractals() {
     setHandlers(false);
     statusSummary = document.getElementById("statusSummary");
+    telemetryStyle = window.getComputedStyle(statusSummary);
     statusSummary.innerText = "Calculating coordinates";
     let canvas = document.getElementById("myCanvas");
     let body = document.getElementById("myBody");
@@ -68,14 +70,13 @@ function drawFractals() {
     }
     console.log("... completed");
     console.log("Creating equations ...");
-    /* equations.push(new SimplePolynomial(3));
-    equations.push(new SimplePolynomial(4));
+    equations.push(new SimplePolynomial(3));
+    /* equations.push(new SimplePolynomial(4));
     equations.push(new SimplePolynomial(5));
     equations.push(new SimplePolynomial(6)); */
     equations.push(new Polynomial([2, -2, 0, 1]));
-    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
     equations.push(new Polynomial([-1, 0, 0, 1, 0, 0, 1]));
-    equations.push(new Polynomial([-1, 0, 0, 1]));
+    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
     console.log("... completed");
     colors.length = 0;
     colors.push(new Array(255, 0, 0));
@@ -120,6 +121,8 @@ function drawFractalRoots(equationIndex) {
 }
 function drawRootWells() {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
     let yPos;
     for (yPos = 0; yPos < height; yPos++)
         setTimeout(updateRootWells, 0, yPos * width, width);
@@ -130,8 +133,9 @@ function updateRootWells(firstPoint, points) {
     let wells = algo.wellsInfo;
     for (let nLoop = 0; nLoop < wells.length; nLoop++) {
         let well = wells[nLoop];
-        let x = realToPixels(well.centerPoint.real);
-        let y = imaginaryToPixels(well.centerPoint.imaginary);
+        let center = well.centerPoint;
+        let x = realToPixels(center.real);
+        let y = imaginaryToPixels(center.imaginary);
         let r = Math.ceil(Math.sqrt(well.size / Math.PI));
         let gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
         gradient.addColorStop(0, "rgb(" + colors[nLoop][0] + ", " + colors[nLoop][1] + ", " + colors[nLoop][2] + ")");
@@ -141,6 +145,12 @@ function updateRootWells(firstPoint, points) {
         ctx.beginPath();
         ctx.arc(x, y, r, 0, 2 * Math.PI);
         ctx.fill();
+        let fontSize = Math.max(10, Math.floor(r / 2.1));
+        ctx.font = String(fontSize) + "px " + telemetryStyle.fontFamily;
+        let strPoints = String(well.size) + " points";
+        ctx.fillStyle = "black";
+        ctx.fillText(center.toPlusMinus(2), x, y - Math.ceil(r / 2), Math.floor(1.5 * r));
+        ctx.fillText(strPoints, x, y + Math.ceil(r / 20), Math.floor(1.5 * r));
     }
 }
 function realToPixels(coordinate) { return Math.floor(width * (coordinate + (xSize / 2)) / xSize); }
@@ -148,6 +158,8 @@ function imaginaryToPixels(coordinate) { return Math.floor(height * ((ySize / 2)
 function drawFractalRootsGradients(equationIndex, gradientIndex) {
     if (gradientIndex < gradients.length) {
         statusSummary.innerHTML = "Drawing roots for " + equations[equationIndex].HTML + " reached within " + gradients[gradientIndex] + " attempts";
+        if (gradientIndex == 0)
+            ctx.clearRect(0, 0, width, height);
         let yPos;
         for (yPos = 0; yPos < height; yPos++)
             setTimeout(drawFractalLine, 0, yPos, gradients[gradientIndex]);

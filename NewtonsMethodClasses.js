@@ -12,6 +12,12 @@ export class ComplexNumber {
     get real() { return this.r; }
     get imaginary() { return this.i; }
     get toString() { return "(" + this.r + ", " + this.i + ")"; }
+    toPlusMinus(decimalDigits = -1) {
+        let realPart = decimalDigits == -1 ? this.r.toString() : this.r.toFixed(decimalDigits);
+        let signPart = this.i < 0 ? " - " : " + ";
+        let imaginaryPart = decimalDigits == -1 ? Math.abs(this.i).toString() : Math.abs(this.i).toFixed(decimalDigits);
+        return realPart + signPart + imaginaryPart + "i";
+    }
     distance(other) {
         let diffR = this.r - other.r;
         let diffI = this.i - other.i;
