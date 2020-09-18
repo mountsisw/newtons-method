@@ -1,15 +1,11 @@
 /*!
     Newton's Method project
-    Copyright 2020 Mount Si Software, LLC
+    Copyright 2020 Mount Si Software LLC
 */
 
 import { ComplexNumber, Equation, Polynomial, SimplePolynomial } from "./NewtonsMethodClasses.js"
 import { NewtonsMethod, NewtonsMethodResult, RootWell } from "./NewtonsMethodAlgorithm.js"
-
-class ImageInfo
-{
-    constructor(public data: ImageData, public text: string) {}
-}
+import { ImageCollection, ImageInfo } from "./NewtonsMethodImages.js"
 
 let height: number, width: number;
 let xSize: number, ySize: number;
@@ -20,7 +16,7 @@ let gradients: number[] = [4, 8, 16, 32, 64];
 let equations: Equation[] = [];
 let algo: NewtonsMethod;
 let colors: number[][] = [];
-let images: ImageInfo[] = [];
+let images: ImageCollection = new ImageCollection();
 let nImageShown: number;
 let statusSummary: HTMLDivElement;
 
@@ -48,10 +44,9 @@ function drawFractals() : void
     statusSummary = <HTMLDivElement> document.getElementById("statusSummary");
     telemetryStyle = window.getComputedStyle(statusSummary);
     statusSummary.innerText = "Calculating coordinates";
-    let canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById("myCanvas");
-    let body: HTMLBodyElement = <HTMLBodyElement> document.getElementById("myBody");
-    width = canvas.width = body.offsetWidth;
-    height = canvas.height = body.offsetHeight;
+    let canvas: HTMLCanvasElement = <HTMLCanvasElement> document.getElementById("canvas");
+    width = canvas.width = document.body.offsetWidth;
+    height = canvas.height = document.body.offsetHeight;
     ySize = 3;
     xSize = width * 3 / height;
     if (xSize < 3)
@@ -87,10 +82,10 @@ function drawFractals() : void
     equations.push(new SimplePolynomial(3));
     /* equations.push(new SimplePolynomial(4));
     equations.push(new SimplePolynomial(5));
-    equations.push(new SimplePolynomial(6)); */
+    equations.push(new SimplePolynomial(6));
     equations.push(new Polynomial([2, -2, 0, 1]));
     equations.push(new Polynomial([-1, 0, 0, 1, 0, 0, 1]));
-    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
+    equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1])); */
     console.log("... completed");
 
     colors.length = 0;
@@ -103,10 +98,8 @@ function drawFractals() : void
     colors.push(new Array(191, 191, 191));
     colors.push(new Array(63, 63, 63));
     
-    images.length = 0;
-
-    ctx = canvas.getContext("2d", { alpha: false });
-
+    ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
     drawFractalRoots(0);
 }
 
@@ -118,7 +111,7 @@ function drawFractalRoots(equationIndex: number) : void
         let maxAttempts: number = gradients[gradients.length - 1];
         algo = new NewtonsMethod(equation, maxAttempts);
         results.length = 0;
-        statusSummary.innerHTML = "Solving " + equation.HTML + " for " + startingPoints.length + " points";
+        statusSummary.innerHTML = "Solving " + equation.HTML + " for " + startingPoints.length + " points (" + maxAttempts + " max attempts)";
         console.log("Computing final points for " + algo.rootCount + " roots with " + maxAttempts + " gradients ...");
         drawRootWells();
         setTimeout(drawFractalRootsGradients, 0, equationIndex, 0);
@@ -131,13 +124,14 @@ function drawFractalRoots(equationIndex: number) : void
         elem = <HTMLDivElement> document.getElementById("next");
         elem.innerText = "Next ->";
         elem.onclick = nextImage;
-        nImageShown = images.length - 1;
         document.addEventListener("keydown", function(event)
         {
             if (event.code == "ArrowLeft") previousImage();
             else if (event.code == "ArrowRight") nextImage();
             event.preventDefault();
         });
+        nImageShown = images.length - 1;
+        // document.getElementById("gallery").style.display = "block";
     }
 }
 
@@ -191,7 +185,7 @@ function drawFractalRootsGradients(equationIndex: number, gradientIndex: number)
         if (gradientIndex == 0) ctx.clearRect(0, 0, width, height);
         let yPos: number;
         for (yPos = 0; yPos < height; yPos++) setTimeout(drawFractalLine, 0, yPos, gradients[gradientIndex]);
-        setTimeout(storeFractalImage, 0);
+        setTimeout(storeFractalImage, 0, equationIndex, gradientIndex);
         setTimeout(drawFractalRootsGradients, 0, equationIndex, gradientIndex + 1);
     }
     else setTimeout(drawFractalRoots, 0, equationIndex + 1);
@@ -214,9 +208,10 @@ function drawFractalLine(yPos: number, nGradients: number) : void
     }
 }
 
-function storeFractalImage() : void
+function storeFractalImage(equationIndex: number, gradientIndex: number) : void
 {
-    images.push(new ImageInfo(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height), statusSummary.innerHTML));
+    images.addImage(ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height),
+        statusSummary.innerHTML, equationIndex, gradients[gradientIndex]);
 }	
 
 function previousImage() : void
@@ -235,6 +230,8 @@ function nextImage() : void
 
 function displayImage() : void
 {
-    ctx.putImageData(images[nImageShown].data, 0, 0);
-    statusSummary.innerHTML = images[nImageShown].text;
+    let imageInfo = images.getImageData(nImageShown);
+    ctx.clearRect(0, 0, width, height);
+    ctx.putImageData(imageInfo.data, 0, 0);
+    statusSummary.innerHTML = imageInfo.text;
 }

@@ -1,6 +1,6 @@
 /*!
     Newton's Method project
-    Copyright 2020 Mount Si Software, LLC
+    Copyright 2020 Mount Si Software LLC
 */
 
 import { ComplexNumber, Equation } from "./NewtonsMethodClasses.js"

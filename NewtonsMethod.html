@@ -60,15 +60,34 @@
 				padding: 5px;
 				text-align: center;
 			}
+			#closeup
+			{
+				display: flex;
+				flex-direction: column;
+			}
+			#inspect
+			{
+				width: auto;
+				height: auto;
+				padding: 1%;
+			}
 		</style>
 		<script type="module" src="./NewtonsMethod.js"></script>
 	</head>
-	<body id="myBody">
+	<body>
 		<section class="telemetry">
 			<div id="prev"></div>
 			<div id="statusSummary">Click or touch the screen to start drawing fractals</div>
 			<div id="next"></div>
 		</section>
-		<canvas id="myCanvas" style="width:100%; height:100%"></canvas>
+		<canvas id="canvas" style="width:100%; height:100%"></canvas>
+		<div id="gallery" style="display: none;">
+			<section id="thumbnails"></section>
+			<section id="closeup">
+				<img id="inspect" />
+				<div id="controls">
+				</div>
+			</section>
+		</div>
 	</body>
 </html>

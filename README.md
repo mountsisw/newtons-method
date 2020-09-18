@@ -1,6 +1,7 @@
 # Newton's Method
 
 Public repository for Newton's Method project.
+Copyright 2020 by Mount Si Software LLC
 
 Do cool math.  Draw cool pictures.  Make people smile.
 
