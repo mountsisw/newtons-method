@@ -24,6 +24,7 @@ export class ImageCollection {
                 return images[imageIndex];
             imageIndex -= images.length;
         }
+        return null;
     }
 }
 export class ImageInfo {

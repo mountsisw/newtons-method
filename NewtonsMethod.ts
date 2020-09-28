@@ -144,7 +144,7 @@ function drawRootWells()
     for (yPos = 0; yPos < height; yPos++) setTimeout(updateRootWells, 0, yPos * width, width);
 }
 
-function updateRootWells(firstPoint, points)
+function updateRootWells(firstPoint: number, points: number)
 {
     for (let index: number = firstPoint; index < (firstPoint + points); index++)
         results.push(algo.solve(startingPoints[index]));

@@ -18,6 +18,11 @@ export class ComplexNumber {
         let imaginaryPart = decimalDigits == -1 ? Math.abs(this.i).toString() : Math.abs(this.i).toFixed(decimalDigits);
         return realPart + signPart + imaginaryPart + "i";
     }
+    toCoordinates(decimalDigits = -1, html = true) {
+        let realPart = decimalDigits == -1 ? this.r.toString() : this.r.toFixed(decimalDigits);
+        let imaginaryPart = decimalDigits == -1 ? this.i.toString() : this.i.toFixed(decimalDigits);
+        return "(" + realPart + ", " + imaginaryPart + (html ? "<i>i</i>" : "i") + ")";
+    }
     distance(other) {
         let diffR = this.r - other.r;
         let diffI = this.i - other.i;
@@ -36,6 +41,21 @@ export class ComplexNumber {
     }
     divide(other) {
         return new ComplexNumber((this.r * other.r + this.i * other.i) / (other.r * other.r + other.i * other.i), (this.i * other.r - this.r * other.i) / (other.r * other.r + other.i * other.i));
+    }
+}
+export class EquationCollection {
+    constructor() {
+        this.equations = new Array();
+        this.equations.push(new SimplePolynomial(3));
+        this.equations.push(new Polynomial([2, -2, 0, 1]));
+        this.equations.push(new Polynomial([-1, 0, 0, 1, 0, 0, 1]));
+        this.equations.push(new Polynomial([-16, 0, 0, 0, 15, 0, 0, 0, 1]));
+    }
+    get equationCount() { return this.equations.length; }
+    getEquation(equationNumber) {
+        if (equationNumber < 1 || equationNumber > this.equationCount)
+            return null;
+        return this.equations[equationNumber - 1];
     }
 }
 export class Equation {
@@ -78,7 +98,6 @@ export class Polynomial extends Equation {
             this.HTMLString = String(constant);
         else
             this.HTMLString += constant > 0 ? " + " + String(constant) : constant < 0 ? " - " + String(0 - constant) : "";
-        this.HTMLString = "<i>" + this.HTMLString + "</i>";
     }
     formatExponent(expValue) {
         if (expValue == 0)

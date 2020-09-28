@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <title>Newton's Method App</title>
+        <link rel="stylesheet" href="NewtonsMethod.css" />
+        <script type="module" src="./NewtonsMethodApp.js"></script>
+    </head>
+    <body>
+        <div id="normal">
+            <header id="header">Newton's Method App</header>
+            <div id="main">
+                <section id="collection">
+                    <div class="gallery">
+                        <div class="aspect-ratio-box">
+                            <div id="new" class="thumbnail">+</div>
+                        </div>
+                        <span>Click for new fractals</span>
+                    </div>
+                </section>
+                <section id="contents">
+                    <div id="fractalMenu">Make new fractals</div>
+                    <div id="imageViewer" style="display: none;">
+                        <img id="close-up" />
+                        <div id="controls" class="control-elements">
+                            <div id="equation"></div>
+                            <div id="colors">
+                                <svg id="legend" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"></svg>
+                                <svg id="colorScale" style="display: none" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"></svg>
+                            </div>
+                            <div id="prev">&larr; Previous</div>
+                            <div id="next">Next &rarr;</div>
+                            <div id="fullscreen">Full screen</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <div id="fullScreen" style="display: none;">
+            <canvas id="fullScreenCanvas" width="100%" height="100%"></canvas>
+        </div>
+    </body>
+</html>

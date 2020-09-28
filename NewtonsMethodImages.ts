@@ -9,7 +9,7 @@ export class ImageCollection
     private imageCount: number = 0;
     public get length(): number { return this.imageCount; }
     public get galleryCount(): number { return this.imageMap.size; }
-    public getGallerySize(galleryIndex): number { return this.imageMap.get(galleryIndex).length; }
+    public getGallerySize(galleryIndex: number): number { return this.imageMap.get(galleryIndex).length; }
 
     public addImage(data: ImageData, text: string, equationIndex: number, maxIterations: number)
     {
@@ -20,13 +20,14 @@ export class ImageCollection
     }
 
     // incredibly inefficient but OK for small numbers and we'll change it soon
-    public getImageData(imageIndex: number) : ImageInfo
+    public getImageData(imageIndex: number) : ImageInfo | null
     {
         for (let images of this.imageMap.values())
         {
             if (imageIndex < images.length) return images[imageIndex];
             imageIndex -= images.length;
         }
+        return null;
     }
 }
 
